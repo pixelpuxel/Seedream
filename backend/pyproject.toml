@@ -1,0 +1,33 @@
+[project]
+name = "seedream-studio-backend"
+version = "1.0.0"
+requires-python = ">=3.12"
+dependencies = [
+  "alembic>=1.14,<2",
+  "celery[redis]>=5.4,<6",
+  "fastapi>=0.116,<1",
+  "httpx[http2]>=0.28,<1",
+  "pillow>=11,<12",
+  "pillow-heif>=0.22,<2",
+  "psycopg[binary]>=3.2,<4",
+  "pydantic-settings>=2.7,<3",
+  "pyjwt[crypto]>=2.10,<3",
+  "python-multipart>=0.0.20,<1",
+  "redis>=5.2,<6",
+  "sqlalchemy>=2.0.36,<3",
+  "uvicorn[standard]>=0.34,<1",
+]
+
+[project.optional-dependencies]
+test = ["pytest>=8.3,<9", "pytest-cov>=6,<7"]
+
+[build-system]
+requires = ["setuptools>=75"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["app*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"

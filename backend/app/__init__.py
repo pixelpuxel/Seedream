@@ -1,0 +1,2 @@
+"""Seedream Studio backend."""
+
