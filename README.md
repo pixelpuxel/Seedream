@@ -4,6 +4,14 @@ Self-hosted FastAPI backend for Seedream image generation. It provides username/
 
 The provider adapter follows the official BytePlus ModelArk image-generation endpoint and supports Seedream 5.0 Pro, Flash, and Lite with single or multiple reference images.
 
+## Relationship to the iOS app and business model
+
+This repository contains the optional, self-hosted server component for the independently developed Seedream Studio iOS app. The iOS app can also be used in standalone mode without this server.
+
+Users bring their own official BytePlus ModelArk account and API key. API access, inference credits, and model usage are not included, resold, or billed by the app developer; any provider charges are paid by the user directly to the API provider. The paid App Store download covers the client application itself. Self-hosting is optional, and this backend is provided under the MIT License for users who prefer to operate their own server and storage.
+
+Seedream Studio is an independent client and is not affiliated with, endorsed by, or an official product of ByteDance, BytePlus, or Volcano Engine. “Seedream” is used descriptively to identify compatibility with the Seedream models exposed through the official ModelArk API. All related names and trademarks belong to their respective owners.
+
 ## Quick start
 
 Requirements: Docker Engine with Docker Compose v2.
