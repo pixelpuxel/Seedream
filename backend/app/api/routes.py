@@ -241,6 +241,59 @@ def get_generation(generation_id: str, user: User = Depends(get_current_user), d
     return generation_dict(load_generation(db, generation_id, user.id))
 
 
+@router.get("/integrations/finished-images", tags=["Integrationen"])
+def list_finished_images_for_integrations(
+    query: str = Query("", max_length=300),
+    limit: int = Query(60, ge=1, le=100),
+    offset: int = Query(0, ge=0),
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    conditions = [
+        Generation.user_id == user.id,
+        Generation.status == GenerationStatus.completed,
+        GenerationImage.role == "result",
+        GenerationImage.mime_type.like("image/%"),
+    ]
+    needle = query.strip().casefold()
+    if needle:
+        pattern = f"%{needle}%"
+        conditions.append(
+            func.lower(func.coalesce(Generation.final_prompt, "") + " " + func.coalesce(Generation.prompt, "")).like(pattern)
+        )
+    base = (
+        select(Generation, GenerationImage)
+        .join(GenerationImage, GenerationImage.generation_id == Generation.id)
+        .where(*conditions)
+    )
+    count_query = (
+        select(func.count(GenerationImage.id))
+        .select_from(Generation)
+        .join(GenerationImage, GenerationImage.generation_id == Generation.id)
+        .where(*conditions)
+    )
+    rows = db.execute(
+        base.order_by(Generation.created_at.desc(), GenerationImage.created_at.desc()).offset(offset).limit(limit)
+    ).all()
+    return {
+        "items": [
+            {
+                "id": f"{generation.id}:{image.id}",
+                "generation_id": generation.id,
+                "source_image_id": image.id,
+                "prompt": generation.prompt,
+                "final_prompt": generation.final_prompt,
+                "created_at": generation.created_at,
+                "image": image_dict(image),
+            }
+            for generation, image in rows
+        ],
+        "total": db.scalar(count_query) or 0,
+        "limit": limit,
+        "offset": offset,
+    }
+
+
 @router.put("/generations/{generation_id}/preference", response_model=GenerationResponse, tags=["Generierungen"])
 def update_generation_preference(
     generation_id: str,

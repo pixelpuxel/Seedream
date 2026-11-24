@@ -110,6 +110,45 @@ def test_authenticated_image_lookup_refreshes_download_url(client, token):
     assert "token=" in refreshed.json()["download_url"]
 
 
+def test_finished_image_integration_endpoint_filters_and_paginates(client, token):
+    key, size = get_storage().put(png(), "png")
+    with SessionLocal() as db:
+        matching = Generation(
+            user_id="test-user", kind=GenerationKind.generate, status=GenerationStatus.completed,
+            prompt="Rote Jacke im Wald", final_prompt="Rote Jacke im Wald", model="seedream",
+            aspect_ratio="1:1", resolution="2K", parameters={},
+        )
+        hidden = Generation(
+            user_id="test-user", kind=GenerationKind.generate, status=GenerationStatus.completed,
+            prompt="Blauer Himmel", final_prompt="Blauer Himmel", model="seedream",
+            aspect_ratio="1:1", resolution="2K", parameters={},
+        )
+        db.add_all([matching, hidden])
+        db.flush()
+        db.add_all([
+            GenerationImage(
+                user_id="test-user", generation_id=matching.id, storage_key=key,
+                original_filename="result.png", mime_type="image/png", width=32, height=32,
+                byte_size=size, role="result",
+            ),
+            GenerationImage(
+                user_id="test-user", generation_id=hidden.id, storage_key=key + "-second",
+                original_filename="result.png", mime_type="image/png", width=32, height=32,
+                byte_size=size, role="result",
+            ),
+        ])
+        db.commit()
+
+    response = client.get(
+        "/api/v1/integrations/finished-images?query=jacke&limit=1",
+        headers=headers(token),
+    )
+    assert response.status_code == 200, response.text
+    assert response.json()["total"] == 1
+    assert response.json()["items"][0]["final_prompt"] == "Rote Jacke im Wald"
+    assert response.json()["items"][0]["image"]["role"] == "result"
+
+
 @pytest.mark.parametrize(
     ("format", "mime"),
     [("png", "image/png"), ("jpeg", "image/jpeg"), ("webp", "image/webp"), ("pdf", "application/pdf")],
